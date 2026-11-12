@@ -45,6 +45,18 @@ type queueingController interface {
 	ProcessItem(ctx context.Context, key types.NamespacedName) error
 }
 
+// ControllerOption optionally customises a controller built with
+// NewController. Options never change the queue retry behavior.
+type ControllerOption func(*controller)
+
+// WithErrorReporter installs the sink for reconcile error classification and
+// recovery reports. When unset, a structured debug-log reporter is used.
+func WithErrorReporter(reporter ErrorReporter) ControllerOption {
+	return func(c *controller) {
+		c.reporter = reporter
+	}
+}
+
 func NewController(
 	name string,
 	metrics *metrics.Metrics,
@@ -52,15 +64,21 @@ func NewController(
 	mustSync []cache.InformerSynced,
 	runDurationFuncs []runDurationFunc,
 	queue workqueue.TypedRateLimitingInterface[types.NamespacedName],
+	opts ...ControllerOption,
 ) Interface {
-	return &controller{
+	c := &controller{
 		name:             name,
 		metrics:          metrics,
 		syncHandler:      syncFunc,
 		mustSync:         mustSync,
 		runDurationFuncs: runDurationFuncs,
 		queue:            queue,
+		reporter:         loggingErrorReporter{},
 	}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
 }
 
 type controller struct {
@@ -87,6 +105,11 @@ type controller struct {
 
 	// metrics is used to expose Prometheus, shared by all controllers
 	metrics *metrics.Metrics
+
+	// reporter consumes reconcile error classification and recovery
+	// reports. It is additive to the queue retry path and never influences
+	// whether or how a key is re-added.
+	reporter ErrorReporter
 }
 
 // Run starts the controller loop
@@ -154,6 +177,16 @@ func (c *controller) worker(ctx context.Context) {
 				} else {
 					log.Error(err, "re-queuing item due to error processing")
 					c.metrics.IncrementSyncErrorCount(c.name)
+				}
+
+				// Emit the additive recovery report before re-adding the
+				// key. All reads (NumRequeues, backoff peek, shutting-down
+				// state) are non-mutating and the requeue call below is
+				// unchanged, so the existing queue retry behavior is fully
+				// preserved, including context cancellation and leader
+				// switch shutdowns.
+				if c.reporter != nil {
+					c.reporter.ReportReconcileError(ctx, newReconcileErrorReport(c.name, obj, err, c.queue))
 				}
 
 				c.queue.AddRateLimited(obj)

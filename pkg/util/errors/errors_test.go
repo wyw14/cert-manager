@@ -17,10 +17,47 @@ limitations under the License.
 package errors
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"unicode/utf8"
 )
+
+func TestIsInvalidData(t *testing.T) {
+	tests := map[string]struct {
+		err  error
+		want bool
+	}{
+		"nil error is not invalid data": {
+			err:  nil,
+			want: false,
+		},
+		"plain error is not invalid data": {
+			err:  fmt.Errorf("something else"),
+			want: false,
+		},
+		"bare invalid data error matches": {
+			err:  NewInvalidData("malformed PEM"),
+			want: true,
+		},
+		"wrapped invalid data error matches through the cause chain": {
+			err:  fmt.Errorf("parsing private key: %w", NewInvalidData("bad key")),
+			want: true,
+		},
+		"doubly wrapped invalid data error matches": {
+			err:  fmt.Errorf("outer: %w", fmt.Errorf("inner: %w", NewInvalidData("bad data"))),
+			want: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := IsInvalidData(test.err); got != test.want {
+				t.Errorf("IsInvalidData() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
 
 func TestTruncateMessage(t *testing.T) {
 	tests := map[string]struct {

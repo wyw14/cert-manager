@@ -129,12 +129,7 @@ func (c *Controller) Register(ctx *controllerpkg.Context) (workqueue.TypedRateLi
 	c.log = logf.FromContext(ctx.RootContext, componentName)
 
 	// create a queue used to queue up items to be processed
-	c.queue = workqueue.NewTypedRateLimitingQueueWithConfig(
-		controllerpkg.DefaultItemBasedRateLimiter(),
-		workqueue.TypedRateLimitingQueueConfig[types.NamespacedName]{
-			Name: componentName,
-		},
-	)
+	c.queue = controllerpkg.NewWorkQueue(componentName, controllerpkg.DefaultItemBasedRateLimiter())
 
 	secretsInformer := ctx.KubeSharedInformerFactory.Secrets()
 	issuerInformer := ctx.SharedInformerFactory.Certmanager().V1().Issuers()

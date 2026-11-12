@@ -51,12 +51,7 @@ func (c *controller) Register(ctx *controllerpkg.Context) (workqueue.TypedRateLi
 	log := logf.FromContext(ctx.RootContext, ControllerName)
 	c.sync = shimhelper.SyncFnFor(ctx.Recorder, log, ctx.CMClient, cmShared.Certmanager().V1().Certificates().Lister(), ctx.IngressShimOptions, ctx.FieldManager)
 
-	queue := workqueue.NewTypedRateLimitingQueueWithConfig(
-		controllerpkg.DefaultItemBasedRateLimiter(),
-		workqueue.TypedRateLimitingQueueConfig[types.NamespacedName]{
-			Name: ControllerName,
-		},
-	)
+	queue := controllerpkg.NewWorkQueue(ControllerName, controllerpkg.DefaultItemBasedRateLimiter())
 
 	mustSync := []cache.InformerSynced{
 		ingressInformer.Informer().HasSynced,

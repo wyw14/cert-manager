@@ -68,12 +68,7 @@ func init() {
 // InformerSynced functions that must be synced, or an error.
 func (c *Controller) Register(ctx *controllerpkg.Context) (workqueue.TypedRateLimitingInterface[types.NamespacedName], []cache.InformerSynced, error) {
 	c.log = logf.FromContext(ctx.RootContext, ControllerName)
-	c.queue = workqueue.NewTypedRateLimitingQueueWithConfig(
-		controllerpkg.DefaultItemBasedRateLimiter(),
-		workqueue.TypedRateLimitingQueueConfig[types.NamespacedName]{
-			Name: ControllerName,
-		},
-	)
+	c.queue = controllerpkg.NewWorkQueue(ControllerName, controllerpkg.DefaultItemBasedRateLimiter())
 
 	certificateRequestInformer := ctx.SharedInformerFactory.Certmanager().V1().CertificateRequests()
 	mustSync := []cache.InformerSynced{certificateRequestInformer.Informer().HasSynced}

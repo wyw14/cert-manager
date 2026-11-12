@@ -80,12 +80,7 @@ func NewController(
 ) (*controller, workqueue.TypedRateLimitingInterface[types.NamespacedName], []cache.InformerSynced, error) {
 
 	// Create a queue used to queue up Orders to be processed.
-	queue := workqueue.NewTypedRateLimitingQueueWithConfig(
-		controllerpkg.DefaultACMERateLimiter(),
-		workqueue.TypedRateLimitingQueueConfig[types.NamespacedName]{
-			Name: ControllerName,
-		},
-	)
+	queue := controllerpkg.NewWorkQueue(ControllerName, controllerpkg.DefaultACMERateLimiter())
 
 	// Create a scheduledWorkQueue to schedule Orders for re-processing.
 	scheduledWorkQueue := scheduler.NewScheduledWorkQueue(ctx.Clock, queue.Add)

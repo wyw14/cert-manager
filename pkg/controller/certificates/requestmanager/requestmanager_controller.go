@@ -82,12 +82,7 @@ type controller struct {
 func NewController(
 	log logr.Logger, ctx *controllerpkg.Context) (*controller, workqueue.TypedRateLimitingInterface[types.NamespacedName], []cache.InformerSynced, error) {
 	// create a queue used to queue up items to be processed
-	queue := workqueue.NewTypedRateLimitingQueueWithConfig(
-		controllerpkg.DefaultCertificateRateLimiter(),
-		workqueue.TypedRateLimitingQueueConfig[types.NamespacedName]{
-			Name: ControllerName,
-		},
-	)
+	queue := controllerpkg.NewWorkQueue(ControllerName, controllerpkg.DefaultCertificateRateLimiter())
 
 	// obtain references to all the informers used by this controller
 	certificateInformer := ctx.SharedInformerFactory.Certmanager().V1().Certificates()

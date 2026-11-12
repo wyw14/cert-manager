@@ -90,12 +90,7 @@ func (c *controller) Register(ctx *controllerpkg.Context) (workqueue.TypedRateLi
 	c.log = logf.FromContext(ctx.RootContext, ControllerName)
 
 	// create a queue used to queue up items to be processed
-	c.queue = workqueue.NewTypedRateLimitingQueueWithConfig(
-		controllerpkg.DefaultACMERateLimiter(),
-		workqueue.TypedRateLimitingQueueConfig[types.NamespacedName]{
-			Name: ControllerName,
-		},
-	)
+	c.queue = controllerpkg.NewWorkQueue(ControllerName, controllerpkg.DefaultACMERateLimiter())
 
 	// obtain references to all the informers used by this controller
 	challengeInformer := ctx.SharedInformerFactory.Acme().V1().Challenges()

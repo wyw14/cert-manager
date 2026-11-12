@@ -17,6 +17,7 @@ limitations under the License.
 package errors
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -31,11 +32,12 @@ func NewInvalidData(str string, obj ...any) error {
 	return &invalidDataError{error: fmt.Errorf(str, obj...)}
 }
 
+// IsInvalidData reports whether err (or any error in its cause chain) is an
+// invalidDataError. errors.As keeps the check working when the error has been
+// wrapped with fmt.Errorf("...: %w", err) on its way up the call stack.
 func IsInvalidData(err error) bool {
-	if _, ok := err.(*invalidDataError); !ok {
-		return false
-	}
-	return true
+	var invalid *invalidDataError
+	return errors.As(err, &invalid)
 }
 
 // TruncateMessage bounds s to maxLen bytes in total, including the marker which

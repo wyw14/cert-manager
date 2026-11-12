@@ -73,12 +73,7 @@ func (c *controller) Register(ctx *controllerpkg.Context) (workqueue.TypedRateLi
 	c.log = logf.FromContext(ctx.RootContext, ControllerName)
 
 	// create a queue used to queue up items to be processed
-	c.queue = workqueue.NewTypedRateLimitingQueueWithConfig(
-		controllerpkg.DefaultItemBasedRateLimiter(),
-		workqueue.TypedRateLimitingQueueConfig[types.NamespacedName]{
-			Name: ControllerName,
-		},
-	)
+	c.queue = controllerpkg.NewWorkQueue(ControllerName, controllerpkg.DefaultItemBasedRateLimiter())
 
 	// obtain references to all the informers used by this controller
 	clusterIssuerInformer := ctx.SharedInformerFactory.Certmanager().V1().ClusterIssuers()

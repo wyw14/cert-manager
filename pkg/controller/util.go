@@ -37,21 +37,30 @@ import (
 )
 
 // DefaultItemBasedRateLimiter returns a new rate limiter with base delay of 5
-// seconds, max delay of 5 minutes.
+// seconds, max delay of 5 minutes. The returned limiter additionally supports
+// non-mutating backoff reads (ExponentialBackoffRateLimiter.PeekWhen); its
+// retry behavior is identical to the plain client-go exponential failure
+// rate limiter.
 func DefaultItemBasedRateLimiter() workqueue.TypedRateLimiter[types.NamespacedName] {
-	return workqueue.NewTypedItemExponentialFailureRateLimiter[types.NamespacedName](time.Second*5, time.Minute*5)
+	return NewExponentialBackoffRateLimiter(time.Second*5, time.Minute*5)
 }
 
 // DefaultCertificateRateLimiter returns a new rate limiter with base delay of 1
-// seconds, max delay of 30 seconds.
+// seconds, max delay of 30 seconds. The returned limiter additionally supports
+// non-mutating backoff reads (ExponentialBackoffRateLimiter.PeekWhen); its
+// retry behavior is identical to the plain client-go exponential failure
+// rate limiter.
 func DefaultCertificateRateLimiter() workqueue.TypedRateLimiter[types.NamespacedName] {
-	return workqueue.NewTypedItemExponentialFailureRateLimiter[types.NamespacedName](time.Second*1, time.Second*30)
+	return NewExponentialBackoffRateLimiter(time.Second*1, time.Second*30)
 }
 
 // DefaultACMERateLimiter returns a new rate limiter with base delay of 5
-// seconds, max delay of 30 minutes.
+// seconds, max delay of 30 minutes. The returned limiter additionally supports
+// non-mutating backoff reads (ExponentialBackoffRateLimiter.PeekWhen); its
+// retry behavior is identical to the plain client-go exponential failure
+// rate limiter.
 func DefaultACMERateLimiter() workqueue.TypedRateLimiter[types.NamespacedName] {
-	return workqueue.NewTypedItemExponentialFailureRateLimiter[types.NamespacedName](time.Second*5, time.Minute*30)
+	return NewExponentialBackoffRateLimiter(time.Second*5, time.Minute*30)
 }
 
 // HandleOwnedResourceNamespacedFunc returns a function that accepts a
