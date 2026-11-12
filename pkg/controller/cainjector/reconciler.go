@@ -93,7 +93,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// ensure that it wants injection
-	dataSource, err := r.caDataSourceFor(log, obj)
+	dataSource, err := caDataSourceFor(r.sources, log, obj)
 	if err != nil {
 		log.V(logf.DebugLevel).Info("failed to determine ca data source for injectable")
 		return ctrl.Result{}, nil //nolint:nilerr
@@ -139,8 +139,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{}, nil
 }
 
-func (r *reconciler) caDataSourceFor(log logr.Logger, metaObj metav1.Object) (caDataSource, error) {
-	for _, s := range r.sources {
+// caDataSourceFor returns the first configured data source for the given
+// injectable object. It is shared by the reconciler and the change previewer.
+func caDataSourceFor(sources []caDataSource, log logr.Logger, metaObj metav1.Object) (caDataSource, error) {
+	for _, s := range sources {
 		if s.Configured(log, metaObj) {
 			return s, nil
 		}
